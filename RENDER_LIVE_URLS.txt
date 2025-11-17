@@ -1,0 +1,81 @@
+🚀 RENDER DEPLOYMENT - LIVE URLs
+==========================================
+
+✅ SERVER SUCCESSFULLY DEPLOYED ON RENDER!
+==========================================
+
+🌐 BASE URL:
+https://bb-fybm.onrender.com
+
+
+📋 CASHFREE DASHBOARD URLs:
+==========================================
+
+1️⃣ RETURN URL (Payment Success Callback):
+https://bb-fybm.onrender.com/api/payment/success
+
+2️⃣ WEBHOOK URL (Payment Status Updates):
+https://bb-fybm.onrender.com/api/payment/webhook
+
+
+📱 FLUTTER APP - PaymentService.dart:
+==========================================
+
+File: PaymentService.dart
+
+Update this line:
+static const String baseUrl = 'https://bb-fybm.onrender.com';
+
+Complete example:
+class PaymentService {
+  static const String baseUrl = 'https://bb-fybm.onrender.com';
+  static const String appDeepLink = 'equityapp://payment-success';
+  
+  // ... rest of the code
+}
+
+
+📋 API ENDPOINTS:
+==========================================
+
+POST   /api/payment/create-order
+GET    /api/payment/success
+POST   /api/payment/webhook
+GET    /api/wallet/balance/:userId
+GET    /api/wallet/transactions/:userId
+
+
+✅ DEPLOYMENT STATUS:
+==========================================
+
+✅ Server: LIVE
+✅ URL: https://bb-fybm.onrender.com
+✅ Port: 10000
+✅ Environment: Production
+✅ Repository: https://github.com/vishal-jaat-007/BB
+
+
+📝 NEXT STEPS:
+==========================================
+
+1. ✅ Cashfree Dashboard mein URLs update karo
+2. ✅ Flutter app (PaymentService.dart) mein baseUrl update karo
+3. ✅ Test payment karke verify karo
+
+
+💡 IMPORTANT NOTES:
+==========================================
+
+- Free plan pe server 15 min inactivity ke baad sleep ho jata hai
+- Pehla request slow ho sakta hai (30-60 seconds)
+- Production ke liye paid plan better hai
+- Code update: git push karo, Render auto-deploy kar dega
+
+
+🔗 LINKS:
+==========================================
+
+Render Dashboard: https://dashboard.render.com
+GitHub Repository: https://github.com/vishal-jaat-007/BB
+Server URL: https://bb-fybm.onrender.com
+

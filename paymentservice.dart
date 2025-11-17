@@ -8,7 +8,7 @@
 
 // class PaymentService {
 //   // Local API URL - ACTUAL SERVER URL
-//   static const String baseUrl = 'https://mighty-tools-stick.loca.lt';
+//   static const String baseUrl = 'https://bb-fybm.onrender.com';
 //   // For local testing: 'http://localhost:3000'
 //   // For production: 'https://yourdomain.com'
 
