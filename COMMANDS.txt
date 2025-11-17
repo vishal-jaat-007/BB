@@ -1,0 +1,95 @@
+📋 IMPORTANT COMMANDS - सभी जरूरी Commands
+
+===========================================
+1️⃣ SERVER START करने के लिए:
+===========================================
+
+cd /Users/vishal/Desktop/cashfree-wallet-backend
+node index.js > server_live.log 2>&1 &
+
+या background में:
+cd /Users/vishal/Desktop/cashfree-wallet-backend && node index.js > server_live.log 2>&1 &
+
+
+===========================================
+2️⃣ SERVER RESTART करने के लिए:
+===========================================
+
+cd /Users/vishal/Desktop/cashfree-wallet-backend
+pkill -f "node index.js" 2>/dev/null; sleep 1; node index.js > server_live.log 2>&1 &
+
+
+===========================================
+3️⃣ NEW URL बनाने के लिए:
+===========================================
+
+Step 1: Purani tunnel band karo
+pkill -f "lt --port" 2>/dev/null; sleep 2
+
+Step 2: Naya tunnel start karo
+cd /Users/vishal/Desktop/cashfree-wallet-backend
+lt --port 3000 > /tmp/localtunnel_output.txt 2>&1 &
+
+Step 3: URL nikal lo (3 seconds wait karo)
+sleep 3 && cat /tmp/localtunnel_output.txt | grep -o 'https://[^ ]*' | head -1
+
+Step 4: index.js mein URL update karo
+(Line 1105 pe URL update karna hoga)
+
+
+===========================================
+4️⃣ SERVER + NEW URL एक साथ:
+===========================================
+
+# Purani tunnel band karo
+pkill -f "lt --port" 2>/dev/null; sleep 2
+
+# Naya tunnel start karo
+cd /Users/vishal/Desktop/cashfree-wallet-backend
+lt --port 3000 > /tmp/localtunnel_output.txt 2>&1 &
+
+# URL nikal lo
+sleep 3 && NEW_URL=$(cat /tmp/localtunnel_output.txt | grep -o 'https://[^ ]*' | head -1) && echo "New URL: $NEW_URL"
+
+# index.js mein URL update karo (manually)
+# Phir server restart karo
+pkill -f "node index.js" 2>/dev/null; sleep 1; node index.js > server_live.log 2>&1 &
+
+
+===========================================
+5️⃣ LIVE LOGS देखने के लिए:
+===========================================
+
+tail -f /Users/vishal/Desktop/cashfree-wallet-backend/server_live.log
+
+या
+cd /Users/vishal/Desktop/cashfree-wallet-backend && tail -f server_live.log
+
+
+===========================================
+6️⃣ SERVER CHECK करने के लिए:
+===========================================
+
+# Server chal raha hai ya nahi
+ps aux | grep "node index.js" | grep -v grep
+
+# Tunnel chal raha hai ya nahi
+ps aux | grep "lt --port" | grep -v grep
+
+# Logs check karo
+tail -20 /Users/vishal/Desktop/cashfree-wallet-backend/server_live.log
+
+
+===========================================
+📱 CURRENT URL (Update करना होगा):
+===========================================
+
+Current URL: https://fresh-bananas-sing.loca.lt
+
+Cashfree Dashboard mein:
+- Return URL: https://fresh-bananas-sing.loca.lt/api/payment/success
+- Webhook URL: https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+Flutter App mein:
+PaymentService.dart -> baseUrl = 'https://fresh-bananas-sing.loca.lt'
+

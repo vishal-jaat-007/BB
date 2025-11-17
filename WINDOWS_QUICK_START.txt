@@ -1,0 +1,42 @@
+🚀 WINDOWS QUICK START GUIDE
+
+===========================================
+📋 STEP 1: SERVER START
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+node index.js
+
+
+===========================================
+📋 STEP 2: CASHFREE DASHBOARD URLs
+===========================================
+
+Return URL:
+https://fresh-bananas-sing.loca.lt/api/payment/success
+
+Webhook URL:
+https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+
+===========================================
+📋 STEP 3: FLUTTER APP UPDATE
+===========================================
+
+PaymentService.dart:
+const baseUrl = 'https://fresh-bananas-sing.loca.lt';
+
+
+===========================================
+📋 STEP 4: TEST PAYMENT
+===========================================
+
+1. App se payment karo
+2. Logs check karo: Get-Content server_live.log -Wait
+3. Balance update hua ya nahi check karo
+
+
+===========================================
+✅ DONE!
+
+

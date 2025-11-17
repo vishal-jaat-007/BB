@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+server_live.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+/tmp/
+*.tmp
+
+# URL files (optional - can keep if needed)
+NEW_URL_READY.txt
+NEW_URLS.txt
+WEBHOOK_URL_READY.txt
+

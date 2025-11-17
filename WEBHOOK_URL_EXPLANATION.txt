@@ -1,0 +1,122 @@
+🔗 WEBHOOK URL क्या है? (समझाने के लिए)
+
+===========================================
+📌 WEBHOOK क्या है?
+===========================================
+
+Webhook एक तरह का "notification system" है जो automatically payment status update करता है.
+
+Real Life Example:
+- जैसे आप Amazon पर order देते हो, तो SMS/Email automatically आता है
+- वैसे ही Webhook automatically payment status backend को bhejta hai
+
+
+===========================================
+🔄 PAYMENT FLOW में Webhook का Role:
+===========================================
+
+1. User payment करता है (Cashfree payment page पर)
+   ↓
+2. Payment successful हो जाती है
+   ↓
+3. Cashfree automatically Webhook URL को call करता है
+   ↓
+4. Backend webhook receive करता है
+   ↓
+5. Backend automatically user ka balance update करता है
+   ↓
+6. User ko app mein updated balance dikh jata hai
+
+
+===========================================
+📡 WEBHOOK URL कैसे काम करता है?
+===========================================
+
+Webhook URL = Backend ka address jahan Cashfree payment status bhejta hai
+
+Example:
+https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+Is URL pe Cashfree automatically POST request bhejta hai jab:
+- Payment successful होती है
+- Payment failed होती है
+- Payment pending होती है
+
+
+===========================================
+💡 क्यों जरूरी है?
+===========================================
+
+1. ✅ Automatic Balance Update
+   - User ko manually refresh nahi karna padta
+   - Payment ke baad automatically balance update ho jata hai
+
+2. ✅ Reliable
+   - Browser close karne ke baad bhi webhook aata hai
+   - User app close kar de, phir bhi balance update ho jata hai
+
+3. ✅ Real-time Updates
+   - Payment complete hote hi webhook trigger hota hai
+   - Balance instantly update ho jata hai
+
+
+===========================================
+🔧 WEBHOOK URL Setup कैसे करें?
+===========================================
+
+Step 1: Cashfree Dashboard mein jao
+   → Settings → Webhooks
+
+Step 2: Webhook URL add karo:
+   https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+Step 3: Events select karo:
+   ✅ PAYMENT_SUCCESS_WEBHOOK
+   ✅ PAYMENT_FAILED_WEBHOOK
+
+Step 4: Save karo
+
+Step 5: Test payment karo - webhook automatically trigger hoga!
+
+
+===========================================
+📊 WEBHOOK vs RETURN URL (Difference):
+===========================================
+
+RETURN URL:
+- Browser mein redirect hota hai
+- User ko dikhta hai
+- Payment success page dikhata hai
+- App redirect ke liye use hota hai
+
+WEBHOOK URL:
+- Background mein chalta hai
+- User ko nahi dikhta
+- Backend ko directly notification bhejta hai
+- Balance update ke liye use hota hai
+
+
+===========================================
+✅ SUMMARY:
+===========================================
+
+Webhook URL = Backend ka address jahan Cashfree payment status automatically bhejta hai
+
+Benefits:
+- Automatic balance update
+- Real-time updates
+- Reliable (browser close karne ke baad bhi kaam karta hai)
+
+Setup:
+- Cashfree Dashboard → Webhooks → URL add karo
+- Test payment karo → Webhook automatically trigger hoga!
+
+
+===========================================
+🎯 CURRENT WEBHOOK URL:
+===========================================
+
+https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+Is URL ko Cashfree Dashboard mein add karna hai!
+

@@ -1,0 +1,107 @@
+📋 WINDOWS POWERSHELL COMMANDS (Windows ke liye)
+
+===========================================
+1️⃣ SERVER START करने के लिए (Windows):
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "node index.js" -WindowStyle Minimized
+
+या background में logs ke saath:
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; node index.js *> server_live.log" -WindowStyle Minimized
+
+या simple (current window mein):
+node index.js
+
+
+===========================================
+2️⃣ SERVER RESTART करने के लिए (Windows):
+===========================================
+
+# Purana server band karo
+Get-Process node | Where-Object {$_.Path -like "*cashfree-wallet-backend*"} | Stop-Process -Force
+
+# Naya server start karo
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "node index.js *> server_live.log" -WindowStyle Minimized
+
+
+===========================================
+3️⃣ NEW URL बनाने के लिए (Windows):
+===========================================
+
+Step 1: Purani tunnel band karo
+Get-Process | Where-Object {$_.ProcessName -eq "node" -and $_.CommandLine -like "*lt --port*"} | Stop-Process -Force
+
+Step 2: Naya tunnel start karo (new PowerShell window mein)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; lt --port 3000"
+
+Step 3: URL check karo (tunnel window mein URL dikhega)
+
+
+===========================================
+4️⃣ LIVE LOGS देखने के लिए (Windows):
+===========================================
+
+Get-Content C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend\server_live.log -Wait -Tail 50
+
+या
+Get-Content server_live.log -Wait
+
+
+===========================================
+5️⃣ SERVER CHECK करने के लिए (Windows):
+===========================================
+
+# Server chal raha hai ya nahi
+Get-Process node -ErrorAction SilentlyContinue
+
+# Logs check karo
+Get-Content C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend\server_live.log -Tail 20
+
+
+===========================================
+6️⃣ SIMPLE COMMANDS (Easiest):
+===========================================
+
+Server Start (simple):
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+node index.js
+
+Server Start (background with logs):
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; node index.js *> server_live.log"
+
+Server Stop:
+Get-Process node | Stop-Process -Force
+
+Logs Dekhna:
+Get-Content server_live.log -Wait
+
+
+===========================================
+💡 IMPORTANT NOTES:
+===========================================
+
+1. Windows PowerShell mein `&` use nahi hota background ke liye
+2. `Start-Process` use karo background processes ke liye
+3. `*>` sab output (stdout + stderr) ko file mein redirect karta hai
+4. `-Wait` flag se logs real-time dikhte hain
+
+
+===========================================
+🎯 RECOMMENDED WAY (Easiest):
+===========================================
+
+1. Terminal kholo
+2. Project folder mein jao:
+   cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+
+3. Server start karo:
+   node index.js
+
+4. Alag terminal mein logs dekho (agar chahiye):
+   Get-Content server_live.log -Wait
+
+5. Server band karne ke liye: Ctrl+C
+
+

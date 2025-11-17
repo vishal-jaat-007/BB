@@ -1,0 +1,187 @@
+📋 WINDOWS - COMPLETE URLS & COMMANDS
+
+===========================================
+🌐 CURRENT SERVER URL:
+===========================================
+
+Base URL:
+https://fresh-bananas-sing.loca.lt
+
+
+===========================================
+📋 CASHFREE DASHBOARD URLs:
+===========================================
+
+1️⃣ RETURN URL (Payment Success Callback):
+https://fresh-bananas-sing.loca.lt/api/payment/success
+
+2️⃣ WEBHOOK URL (Payment Status Updates):
+https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+
+===========================================
+📱 FLUTTER APP - PaymentService.dart:
+===========================================
+
+File: PaymentService.dart
+
+Update this line:
+const baseUrl = 'https://fresh-bananas-sing.loca.lt';
+
+Complete code example:
+class PaymentService {
+  static const String baseUrl = 'https://fresh-bananas-sing.loca.lt';
+  static const String appDeepLink = 'equityapp://payment-success';
+  
+  // ... rest of the code
+}
+
+
+===========================================
+🖥️ WINDOWS COMMANDS (Complete):
+===========================================
+
+1️⃣ SERVER START (सबसे आसान):
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+node index.js
+
+(Server start ho jayega, logs same window mein dikhenge)
+(Stop karne ke liye: Ctrl+C)
+
+
+===========================================
+2️⃣ SERVER START (Background में logs के साथ):
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+.\start-server.ps1
+
+(Ya manually):
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; node index.js *> server_live.log" -WindowStyle Minimized
+
+
+===========================================
+3️⃣ SERVER RESTART:
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+.\restart-server.ps1
+
+(Ya manually):
+Get-Process node | Stop-Process -Force
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; node index.js *> server_live.log" -WindowStyle Minimized
+
+
+===========================================
+4️⃣ LIVE LOGS देखने के लिए:
+===========================================
+
+cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend
+.\view-logs.ps1
+
+(Ya manually):
+Get-Content server_live.log -Wait
+
+
+===========================================
+5️⃣ SERVER STOP करने के लिए:
+===========================================
+
+Get-Process node | Stop-Process -Force
+
+
+===========================================
+6️⃣ NEW URL बनाने के लिए:
+===========================================
+
+Step 1: Purani tunnel band karo
+Get-Process | Where-Object {$_.ProcessName -eq "node"} | Stop-Process -Force
+
+Step 2: Naya tunnel start karo (new PowerShell window)
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd C:\Users\Vishal\Desktop\cashfree-wallet-backend\cashfree-wallet-backend; lt --port 3000"
+
+Step 3: Tunnel window mein URL dikhega (copy karo)
+
+Step 4: index.js file mein URL update karo (Line 1105)
+   Old: https://fresh-bananas-sing.loca.lt
+   New: <naya URL>
+
+Step 5: Server restart karo
+
+
+===========================================
+✅ QUICK CHECKLIST:
+===========================================
+
+□ Server start ho gaya?
+   → Check: http://localhost:3000 (browser mein open karo)
+
+□ Tunnel chal raha hai?
+   → Check: Tunnel window mein URL dikhna chahiye
+
+□ Cashfree Dashboard mein URLs add kiye?
+   → Return URL: https://fresh-bananas-sing.loca.lt/api/payment/success
+   → Webhook URL: https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+□ Flutter App mein baseUrl update kiya?
+   → PaymentService.dart: const baseUrl = 'https://fresh-bananas-sing.loca.lt';
+
+□ Test payment kiya?
+   → Payment karo aur logs check karo
+
+
+===========================================
+🔗 ALL API ENDPOINTS:
+===========================================
+
+Base URL: https://fresh-bananas-sing.loca.lt
+
+1. Create Payment Order:
+   POST https://fresh-bananas-sing.loca.lt/api/payment/create-order
+
+2. Payment Success Callback:
+   GET https://fresh-bananas-sing.loca.lt/api/payment/success
+
+3. Webhook (Cashfree se automatically call hoga):
+   POST https://fresh-bananas-sing.loca.lt/api/payment/webhook
+
+4. Get Wallet Balance:
+   GET https://fresh-bananas-sing.loca.lt/api/wallet/balance/:userId
+
+5. Get Transactions:
+   GET https://fresh-bananas-sing.loca.lt/api/wallet/transactions/:userId
+
+
+===========================================
+💡 IMPORTANT NOTES:
+===========================================
+
+1. Server start karne se pehle tunnel start karna zaroori hai
+2. Tunnel URL har baar restart pe change ho sakta hai
+3. URL change hone pe Cashfree Dashboard aur Flutter App dono mein update karna hoga
+4. Test payment ke baad logs check karo - webhook aaya ya nahi
+
+
+===========================================
+📞 TROUBLESHOOTING:
+===========================================
+
+Problem: Server start nahi ho raha
+Solution: 
+   - Check: node installed hai? (node --version)
+   - Check: Dependencies install kiye? (npm install)
+
+Problem: Tunnel URL nahi mil raha
+Solution:
+   - Tunnel window check karo
+   - localtunnel install karo: npm install -g localtunnel
+
+Problem: Webhook nahi aa raha
+Solution:
+   - Cashfree Dashboard mein webhook URL check karo
+   - Server logs check karo
+   - Tunnel chal raha hai ya nahi check karo
+
+

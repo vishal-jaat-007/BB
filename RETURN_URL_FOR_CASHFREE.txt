@@ -1,0 +1,28 @@
+📋 RETURN URL FOR CASHFREE DASHBOARD
+====================================
+
+✅ Copy this URL and paste in Cashfree Dashboard:
+
+http://wicked-trees-appear.loca.lt/api/payment/success
+
+📝 Instructions:
+1. Cashfree Dashboard → Developers → Payment Forms
+2. Ya Settings → Payment Forms
+3. Apni form (bbequity) select karein
+4. Return URL field mein ye URL paste karein
+5. Save karein
+
+🔍 Important:
+- Simple URL daalna hai (Cashfree automatically query params add karega)
+- {order_id} placeholder Cashfree automatically replace karega
+- Test payment karein - redirect properly kaam karega
+
+⚠️ Note:
+- Agar localtunnel restart karein, to URL change ho sakta hai
+- Phir se new URL add karna padega
+
+✅ After adding this URL:
+1. Payment test karein
+2. Payment complete hone par automatically backend success page par redirect hoga
+3. Backend se app mein redirect hoga
+

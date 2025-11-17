@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: cashfree-wallet-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CASHFREE_APP_ID
+        sync: false
+      - key: CASHFREE_SECRET_KEY
+        sync: false
+      - key: CASHFREE_MODE
+        value: PRODUCTION
+      - key: CASHFREE_FORM_URL
+        sync: false
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+echo "🚀 Starting ngrok..."
+echo ""
+echo "Ngrok start ho gaya! Ab aapko ek URL milega jaise:"
+echo "   https://abc123.ngrok-free.app"
+echo ""
+echo "📋 Webhook URL banane ke liye:"
+echo "   [NGROK_URL]/api/payment/webhook"
+echo ""
+echo "Example:"
+echo "   https://abc123.ngrok-free.app/api/payment/webhook"
+echo ""
+echo "⚠️  Is terminal ko open rakhein!"
+echo ""
+ngrok http 3000

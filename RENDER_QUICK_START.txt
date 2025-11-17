@@ -1,0 +1,123 @@
+🚀 RENDER DEPLOYMENT - QUICK START GUIDE
+==========================================
+
+📋 STEP-BY-STEP INSTRUCTIONS:
+==========================================
+
+1️⃣ GITHUB PE CODE PUSH KARO:
+------------------------------------------
+cd /Users/vishal/Desktop/cashfree-wallet-backend
+
+# Agar git repo nahi hai:
+git init
+git add .
+git commit -m "Ready for Render deployment"
+git branch -M main
+
+# GitHub pe repository banao, phir:
+git remote add origin https://github.com/YOUR_USERNAME/cashfree-wallet-backend.git
+git push -u origin main
+
+
+2️⃣ RENDER.COM PE ACCOUNT BANAO:
+------------------------------------------
+- https://render.com pe jao
+- "Get Started for Free" click karo
+- GitHub account se sign in karo
+
+
+3️⃣ NEW WEB SERVICE CREATE KARO:
+------------------------------------------
+- Dashboard mein "New +" button click karo
+- "Web Service" select karo
+- Apni GitHub repository select karo
+- "Connect" click karo
+
+
+4️⃣ CONFIGURATION SETTINGS:
+------------------------------------------
+Name: cashfree-wallet-backend
+Environment: Node
+Region: Singapore (ya closest)
+Branch: main
+Root Directory: (blank rakho)
+Build Command: npm install
+Start Command: npm start
+Plan: Free (ya Paid)
+
+
+5️⃣ ENVIRONMENT VARIABLES ADD KARO:
+------------------------------------------
+"Environment" section mein ye add karo:
+
+Key: CASHFREE_APP_ID
+Value: [Your Cashfree App ID]
+☑️ Mark as Secret
+
+Key: CASHFREE_SECRET_KEY
+Value: [Your Cashfree Secret Key]
+☑️ Mark as Secret
+
+Key: CASHFREE_MODE
+Value: PRODUCTION
+
+Key: CASHFREE_FORM_URL
+Value: https://payments.cashfree.com/forms/bbequity
+
+Key: PORT
+Value: 10000
+
+Key: NODE_ENV
+Value: production
+
+
+6️⃣ DEPLOY KARO:
+------------------------------------------
+- "Create Web Service" button click karo
+- Deployment start ho jayega
+- 2-3 minutes wait karo
+- "Live" status dikhne tak wait karo
+
+
+7️⃣ URL MIL JAYEGA:
+------------------------------------------
+Deployment complete hone ke baad:
+- Settings section mein "Service URL" mil jayega
+- Example: https://cashfree-wallet-backend.onrender.com
+
+
+8️⃣ CASHFREE DASHBOARD UPDATE KARO:
+------------------------------------------
+Return URL:
+https://YOUR_APP_NAME.onrender.com/api/payment/success
+
+Webhook URL:
+https://YOUR_APP_NAME.onrender.com/api/payment/webhook
+
+
+9️⃣ FLUTTER APP UPDATE KARO:
+------------------------------------------
+PaymentService.dart mein:
+const baseUrl = 'https://YOUR_APP_NAME.onrender.com';
+
+
+✅ DONE! SERVER LIVE HAI! 🎉
+==========================================
+
+📝 IMPORTANT NOTES:
+- Free plan pe server 15 min inactivity ke baad sleep ho jata hai
+- Pehla request slow ho sakta hai (30-60 seconds)
+- Production ke liye paid plan better hai
+- Code update karne ke liye: git push karo, Render auto-deploy kar dega
+
+
+🔧 TROUBLESHOOTING:
+- Server crash? → Logs check karo Render dashboard mein
+- Webhook nahi aa raha? → URL sahi hai ya nahi verify karo
+- Slow response? → Free plan limitation hai, paid plan le lo
+
+
+📞 HELP:
+- Render Docs: https://render.com/docs
+- Support: Render dashboard mein "Support" section
+

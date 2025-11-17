@@ -1,0 +1,20 @@
+📋 WEBHOOK URL FOR CASHFREE
+===========================
+
+✅ "Webhook URL" field mein ye URL paste karein:
+
+http://wicked-trees-appear.loca.lt/api/payment/webhook
+
+📝 Steps:
+1. "Webhook URL" field mein URL paste karein
+2. "Test & Add" button click karein
+3. Webhook create ho jayega
+
+💡 Note:
+- Ye webhook payment status updates ke liye hai
+- Payment success/failed hone par automatically backend ko notify karega
+- Return URL se alag hai (Return URL user redirect ke liye, Webhook backend notification ke liye)
+
+🔗 Webhook URL (Copy karein):
+http://wicked-trees-appear.loca.lt/api/payment/webhook
+
