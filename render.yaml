@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cashfree-wallet-backend
+    name: razorpay-wallet-backend
     env: node
     buildCommand: npm install
     startCommand: npm start
@@ -9,12 +9,10 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: CASHFREE_APP_ID
+      - key: RAZORPAY_KEY_ID
         sync: false
-      - key: CASHFREE_SECRET_KEY
+      - key: RAZORPAY_KEY_SECRET
         sync: false
-      - key: CASHFREE_MODE
-        value: PRODUCTION
-      - key: CASHFREE_FORM_URL
+      - key: RAZORPAY_WEBHOOK_SECRET
         sync: false
 

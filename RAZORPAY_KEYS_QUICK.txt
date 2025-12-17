@@ -1,0 +1,56 @@
+🔑 RAZORPAY KEYS - QUICK REFERENCE
+====================================
+
+📋 CHAHIYE KYA?
+---------------
+1. RAZORPAY_KEY_ID (Key ID)
+2. RAZORPAY_KEY_SECRET (Key Secret)
+3. RAZORPAY_WEBHOOK_SECRET (Webhook Secret)
+
+📍 KAHAN SE MILEGI?
+-------------------
+
+STEP 1: Razorpay Dashboard Login
+   → https://dashboard.razorpay.com
+   → Apna account se login karo
+
+STEP 2: Test Mode ON Karo (Development ke liye)
+   → Top pe "Test Mode" toggle ON karo
+
+STEP 3: API Keys Lein
+   → Left Sidebar → "Settings" (⚙️) → "API Keys"
+   YA
+   → Left Sidebar → "Developers" → "API Keys"
+
+   Yahan dikhega:
+   ✅ Key ID: rzp_test_xxxxxxxxxxxxx
+   ✅ Key Secret: xxxxxxxxxxxxxxxxxxxxx
+   
+   ⚠️ Key Secret sirf EK BAAR dikhta hai - immediately copy kar lo!
+
+STEP 4: Webhook Secret
+   → Left Sidebar → "Developers" → "Webhooks"
+   → "Add New Webhook" click karo
+   → "Secret" field mein ye paste karo:
+   
+   d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+
+📝 EXAMPLE VALUES:
+------------------
+RAZORPAY_KEY_ID=rzp_test_1234567890ABCD
+RAZORPAY_KEY_SECRET=abcdefghijklmnopqrstuvwxyz123456
+RAZORPAY_WEBHOOK_SECRET=d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+
+💡 IMPORTANT NOTES:
+-------------------
+✅ Pehle Test Mode mein test karo
+✅ Key Secret ko secure rakho (kisi ko share mat karo)
+✅ Production mein Live Mode keys use karo (rzp_live_...)
+✅ Webhook Secret same hona chahiye dashboard aur backend mein
+
+🚀 NEXT STEPS:
+--------------
+1. .env file banao project root mein
+2. Upar wale 3 values add karo
+3. Server restart karo
+4. Test payment karo!

@@ -1,0 +1,122 @@
+📱 FLUTTER APP DEVELOPER - QUICK START
+========================================
+
+🎯 KYA KARNA HAI?
+-----------------
+1. Razorpay Flutter package install karo
+2. Backend se order create karo
+3. Razorpay Checkout open karo
+4. Payment success handle karo
+5. Wallet balance update karo
+
+📦 STEP 1: PACKAGE INSTALL
+---------------------------
+pubspec.yaml mein add karo:
+  razorpay_flutter: ^1.3.0
+  http: ^1.1.0
+
+Phir run: flutter pub get
+
+💻 STEP 2: PAYMENT SERVICE CODE
+--------------------------------
+1. Razorpay initialize karo
+2. Backend API call karo: POST /api/payment/create-order
+3. Response se orderId, keyId, amount lein
+4. Razorpay Checkout open karo
+
+📋 STEP 3: BACKEND API DETAILS
+-------------------------------
+Base URL: https://your-backend-url.com
+
+Create Order:
+  POST /api/payment/create-order
+  Body: {
+    "userId": "user123",
+    "amount": "1000",
+    "currency": "INR",
+    "customerName": "User Name",
+    "customerEmail": "user@example.com",
+    "customerPhone": "9999999999",
+    "appRedirectUrl": "equityapp://payment-success"
+  }
+  
+  Response: {
+    "success": true,
+    "orderId": "order_xxxxx",
+    "keyId": "rzp_live_RsiXvkO1ULNiTn",
+    "amount": 100000,  // In paise (1000 * 100)
+    "currency": "INR",
+    ...
+  }
+
+Get Balance:
+  GET /api/wallet/balance/:userId
+  Response: {
+    "success": true,
+    "balance": 1000.0,
+    "transactions": [...]
+  }
+
+🔑 STEP 4: RAZORPAY KEY
+------------------------
+Live Key ID: rzp_live_RsiXvkO1ULNiTn
+
+(Backend se automatically aayega, lekin fallback ke liye use karo)
+
+💡 STEP 5: CODE EXAMPLE
+------------------------
+// Initialize
+Razorpay razorpay = Razorpay();
+razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, handleSuccess);
+razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, handleError);
+
+// Create order from backend
+var orderResponse = await http.post(
+  Uri.parse('$baseUrl/api/payment/create-order'),
+  body: json.encode({
+    'userId': userId,
+    'amount': amount.toString(),
+    ...
+  }),
+);
+
+var orderData = json.decode(orderResponse.body);
+
+// Open Razorpay Checkout
+razorpay.open({
+  'key': orderData['keyId'],
+  'amount': orderData['amount'],  // Already in paise
+  'name': 'Wallet Recharge',
+  'order_id': orderData['orderId'],
+  ...
+});
+
+✅ STEP 6: PAYMENT SUCCESS
+---------------------------
+Payment success ke baad:
+1. Wallet balance refresh karo
+2. Success message dikhao
+3. Profile screen update karo
+
+🔗 STEP 7: DEEP LINK
+---------------------
+Deep link: equityapp://payment-success
+
+Android: AndroidManifest.xml mein add karo
+iOS: Info.plist mein add karo
+
+📝 IMPORTANT NOTES
+-------------------
+✅ Backend URL update karo
+✅ Error handling add karo
+✅ Loading states dikhao
+✅ Payment success ke baad balance refresh karo
+
+📚 DETAILED GUIDE
+------------------
+Complete code examples ke liye:
+FLUTTER_DEVELOPER_GUIDE.md file dekho
+
+🚀 READY TO CODE!
+-----------------
+Backend ready hai, ab Flutter app mein integrate karo!

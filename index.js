@@ -1,21 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Cashfree Configuration
-// NOTE: Replace these with your actual Cashfree credentials from environment variables
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || 'YOUR_APP_ID';
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || 'YOUR_SECRET_KEY';
-const CASHFREE_MODE = process.env.CASHFREE_MODE || 'TEST'; // TEST or PRODUCTION
-const CASHFREE_BASE_URL = CASHFREE_MODE === 'PRODUCTION' 
-  ? 'https://api.cashfree.com' 
-  : 'https://sandbox.cashfree.com';
+// Razorpay Configuration
+// NOTE: Replace these with your actual Razorpay credentials from environment variables
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'YOUR_KEY_ID';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'YOUR_WEBHOOK_SECRET';
 
-// Cashfree Hosted Payment Form URL
-const CASHFREE_FORM_URL = process.env.CASHFREE_FORM_URL || 'https://payments.cashfree.com/forms/bbequity';
+// Initialize Razorpay instance
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET
+});
 
 // App Package Name - Flutter app ka package name
 const APP_PACKAGE_NAME = 'com.example.equityapp';
@@ -44,10 +46,10 @@ app.use((req, res, next) => {
 
 // Basic route
 app.get('/', (req, res) => {
-  res.json({ message: 'Cashfree Wallet Backend is running!' });
+  res.json({ message: 'Razorpay Wallet Backend is running!' });
 });
 
-// Create Payment Order - Cashfree Hosted Form Integration
+// Create Payment Order - Razorpay Integration
 app.post('/api/payment/create-order', async (req, res) => {
   try {
     const { userId, amount, currency = 'INR', appRedirectUrl, customerName, customerEmail, customerPhone } = req.body;
@@ -66,20 +68,41 @@ app.post('/api/payment/create-order', async (req, res) => {
       });
     }
 
-    // Generate unique order ID
-    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('🆔 Order ID Generated:', orderId);
+    // Build return URL
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const returnUrl = `${baseUrl}/api/payment/success?user_id=${encodeURIComponent(userId)}&app_redirect=${encodeURIComponent(appRedirectUrl || APP_DEEP_LINK)}`;
+    
+    // Create Razorpay order
+    const options = {
+      amount: parseFloat(amount) * 100, // Razorpay expects amount in paise
+      currency: currency,
+      receipt: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      notes: {
+        userId: userId,
+        customerName: customerName || 'User',
+        customerEmail: customerEmail || 'user@example.com',
+        customerPhone: customerPhone || '9999999999',
+        appRedirectUrl: appRedirectUrl || APP_DEEP_LINK
+      }
+    };
+
+    console.log('📋 Creating Razorpay order with options:', options);
+
+    const razorpayOrder = await razorpay.orders.create(options);
+    const orderId = razorpayOrder.id;
+    
+    console.log('✅ Razorpay Order Created:', orderId);
 
     // Store order details temporarily (in production, save to database)
-    // IMPORTANT: Store actual order amount (not webhook amount - webhook amount test payment ke liye different ho sakta hai)
     walletBalances[orderId] = {
       userId,
-      amount: parseFloat(amount), // This is the order amount (1000), webhook will have actual payment amount
+      amount: parseFloat(amount),
       status: 'PENDING',
       createdAt: new Date(),
-      appRedirectUrl: appRedirectUrl || APP_DEEP_LINK, // App deep link
-      customerEmail: customerEmail, // Store email for matching
-      customerPhone: customerPhone // Store phone for matching
+      appRedirectUrl: appRedirectUrl || APP_DEEP_LINK,
+      customerEmail: customerEmail,
+      customerPhone: customerPhone,
+      razorpayOrderId: orderId
     };
     
     console.log('💾 Order stored:', {
@@ -89,37 +112,30 @@ app.post('/api/payment/create-order', async (req, res) => {
       status: 'PENDING'
     });
 
-    // Build payment form URL with parameters
-    const baseUrl = req.protocol + '://' + req.get('host');
-    // Return URL - payment success ke baad yahan redirect hoga, phir app mein
-    // IMPORTANT: Cashfree {order_id} placeholder replace karta hai actual Cashfree order ID se
-    // Hamare order_id ko separate parameter mein pass karein taaki match kar sakein
-    const returnUrl = `${baseUrl}/api/payment/success?our_order_id=${encodeURIComponent(orderId)}&user_id=${encodeURIComponent(userId)}&app_redirect=${encodeURIComponent(appRedirectUrl || APP_DEEP_LINK)}`;
-    
-    console.log('📋 Return URL configured:', returnUrl);
-    
-    // Create payment form URL with query parameters
-    const paymentFormUrl = new URL(CASHFREE_FORM_URL);
-    paymentFormUrl.searchParams.append('order_id', orderId);
-    paymentFormUrl.searchParams.append('order_amount', amount);
-    paymentFormUrl.searchParams.append('order_currency', currency);
-    paymentFormUrl.searchParams.append('customer_id', userId);
-    paymentFormUrl.searchParams.append('customer_name', customerName || 'User');
-    paymentFormUrl.searchParams.append('customer_email', customerEmail || 'user@example.com');
-    paymentFormUrl.searchParams.append('customer_phone', customerPhone || '9999999999');
-    paymentFormUrl.searchParams.append('return_url', returnUrl);
-
-    console.log('✅ Payment URL Generated:', paymentFormUrl.toString());
-    console.log('📋 Return URL:', returnUrl);
+    console.log('✅ Payment order created successfully');
     console.log('=====================================\n');
 
     res.json({
       success: true,
       orderId: orderId,
-      paymentUrl: paymentFormUrl.toString(),
-      message: 'Payment URL ready. User ko is URL par redirect karein.',
+      keyId: RAZORPAY_KEY_ID,
+      amount: parseFloat(amount) * 100, // Amount in paise
+      currency: currency,
+      name: customerName || 'User',
+      description: 'Wallet Recharge',
+      prefill: {
+        name: customerName || 'User',
+        email: customerEmail || 'user@example.com',
+        contact: customerPhone || '9999999999'
+      },
+      notes: {
+        userId: userId,
+        appRedirectUrl: appRedirectUrl || APP_DEEP_LINK
+      },
+      returnUrl: returnUrl,
+      message: 'Razorpay order created. Use these details in Razorpay Checkout.',
       instructions: {
-        step1: 'User ko paymentUrl par redirect karein (Cashfree form open hoga)',
+        step1: 'Use orderId, keyId, and amount in Razorpay Checkout',
         step2: 'Payment complete hone ke baad automatically app mein redirect ho jayega',
         step3: 'Profile screen mein balance check karein - automatically update ho jayega'
       }
@@ -134,7 +150,7 @@ app.post('/api/payment/create-order', async (req, res) => {
   }
 });
 
-// Payment Success Callback - Redirect URL (Cashfree form se yahan redirect hoga)
+// Payment Success Callback - Redirect URL (Razorpay se yahan redirect hoga)
 app.get('/api/payment/success', async (req, res) => {
   try {
     // IMPORTANT: Log immediately - even before parsing
@@ -143,172 +159,117 @@ app.get('/api/payment/success', async (req, res) => {
     console.log('📥 Query String:', req.query);
     console.log('📥 All Query Params:', JSON.stringify(req.query, null, 2));
     
-    // IMPORTANT FIX: Order ID properly handle karein
-    // Cashfree apna order_id generate karta hai, lekin hamare order_id ko separate parameter mein pass kiya hai
-    let order_id = req.query.order_id || req.query['order_id']; // Cashfree order ID
-    const our_order_id = req.query.our_order_id || req.query['our_order_id']; // Hamara generated order ID
+    // Razorpay callback parameters
+    const razorpay_order_id = req.query.razorpay_order_id || req.query['razorpay_order_id'];
+    const razorpay_payment_id = req.query.razorpay_payment_id || req.query['razorpay_payment_id'];
+    const razorpay_signature = req.query.razorpay_signature || req.query['razorpay_signature'];
     const user_id = req.query.user_id || req.query['user_id'];
-    const order_status = req.query.order_status || req.query['order_status'];
-    const payment_status = req.query.payment_status || req.query['payment_status'];
 
-    // Pehle hamare order_id se search karein (most reliable)
-    let ourOrderId = our_order_id;
-    
-    // Agar hamara order_id nahi mila, to Cashfree order_id se search karein
-    if (!ourOrderId && order_id) {
-      // Cashfree order_id se stored orders mein search karein
-      for (const [storedOrderId, storedOrder] of Object.entries(walletBalances)) {
-        if (storedOrder.cashfreeOrderId === order_id || storedOrderId === order_id) {
-          ourOrderId = storedOrderId;
-          console.log(`✅ Found our order ID: ${ourOrderId} (Cashfree: ${order_id})`);
-          break;
-        }
+    console.log('🆔 Razorpay Order ID:', razorpay_order_id || 'NOT_PROVIDED');
+    console.log('💳 Razorpay Payment ID:', razorpay_payment_id || 'NOT_PROVIDED');
+    console.log('👤 User ID:', user_id || 'NOT_PROVIDED');
+
+    // Verify Razorpay signature
+    let paymentVerified = false;
+    let orderInfo = null;
+    let orderId = razorpay_order_id;
+    let userId = user_id;
+
+    if (razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+      // Verify signature
+      const text = razorpay_order_id + '|' + razorpay_payment_id;
+      const generatedSignature = crypto
+        .createHmac('sha256', RAZORPAY_KEY_SECRET)
+        .update(text)
+        .digest('hex');
+
+      if (generatedSignature === razorpay_signature) {
+        paymentVerified = true;
+        console.log('✅ Razorpay signature verified');
+      } else {
+        console.log('❌ Razorpay signature verification failed');
+      }
+    }
+
+    // Get order info from stored data
+    if (razorpay_order_id) {
+      orderInfo = walletBalances[razorpay_order_id];
+      if (orderInfo) {
+        userId = userId || orderInfo.userId;
       }
     }
     
     // Agar abhi bhi nahi mila, to user_id se latest PENDING order find karein
-    if (!ourOrderId && user_id) {
+    if (!orderInfo && userId) {
       console.log('⚠️ Searching for latest PENDING order by user_id...');
       const foundOrder = Object.entries(walletBalances).find(
-        ([id, order]) => order.userId === user_id && order.status === 'PENDING'
+        ([id, order]) => order.userId === userId && order.status === 'PENDING'
       );
       if (foundOrder) {
-        ourOrderId = foundOrder[0];
-        console.log(`✅ Found order by user_id: ${ourOrderId}`);
+        orderInfo = foundOrder[1];
+        orderId = foundOrder[0];
+        console.log(`✅ Found order by user_id: ${orderId}`);
       }
     }
-    
-    // Final order_id - Cashfree order_id use karein agar hamara nahi mila
-    order_id = order_id || ourOrderId;
 
-    console.log('🆔 Cashfree Order ID:', order_id || 'NOT_PROVIDED');
-    console.log('🆔 Our Order ID:', ourOrderId || 'NOT_PROVIDED');
-    console.log('👤 User ID:', user_id || 'NOT_PROVIDED');
-    console.log('📊 Order Status:', order_status || 'NOT_PROVIDED');
-    console.log('💳 Payment Status:', payment_status || 'NOT_PROVIDED');
-
-    // IMPORTANT: Agar order_id nahi mila, to ourOrderId use karein
-    if (!order_id && !ourOrderId) {
-      console.log('❌ No order ID found - checking if we can proceed with user_id...');
-      if (!user_id) {
-        return res.status(400).send(`
-          <html>
-          <body>
-            <h1>Error: Order ID and User ID not found</h1>
-            <p>Please contact support.</p>
-          </body>
-          </html>
-        `);
-      }
-    }
-    
-    // Final order_id set karein
-    order_id = order_id || ourOrderId;
-
-    // Get order info from stored data - hamare order_id se
-    let orderInfo = ourOrderId ? walletBalances[ourOrderId] : null;
-    let userId = user_id || (orderInfo ? orderInfo.userId : null);
-    
-    // Agar abhi bhi nahi mila, to Cashfree order_id se search karein
-    if (!orderInfo && order_id) {
-      orderInfo = walletBalances[order_id];
-    }
-    
-    // Agar abhi bhi nahi mila, to user_id se search karein
-    if (!orderInfo && userId) {
-      for (const [storedOrderId, storedOrder] of Object.entries(walletBalances)) {
-        if (storedOrder.userId === userId && storedOrder.status === 'PENDING') {
-          orderInfo = storedOrder;
-          ourOrderId = storedOrderId;
-          console.log(`🔍 Found order by user_id: ${storedOrderId}`);
-          break;
+    // Verify payment with Razorpay API
+    let orderAmount = 0;
+    if (razorpay_payment_id && paymentVerified) {
+      try {
+        const payment = await razorpay.payments.fetch(razorpay_payment_id);
+        if (payment.status === 'captured' || payment.status === 'authorized') {
+          paymentVerified = true;
+          orderAmount = parseFloat(payment.amount) / 100; // Convert from paise to rupees
+          console.log(`💰 Razorpay Amount (from API): ₹${orderAmount}`);
+          
+          // Update order info if not found
+          if (!orderInfo && payment.order_id) {
+            orderId = payment.order_id;
+            orderInfo = walletBalances[orderId];
+          }
         }
+      } catch (apiError) {
+        console.log('⚠️ Could not verify with Razorpay API:', apiError.message);
       }
     }
-    
-    userId = userId || (orderInfo ? orderInfo.userId : null);
 
-    // Verify payment status with Cashfree API (optional but recommended)
-    let paymentVerified = false;
-    // IMPORTANT: Webhook amount use karein (actual payment amount), stored amount nahi
-    // Query params se amount check karein (agar Cashfree ne pass kiya ho)
-    let orderAmount = parseFloat(req.query.order_amount || req.query.amount || 0);
-    // Agar query params mein nahi mila, to orderInfo se lein (but webhook amount preferred)
+    // Get amount from stored order if not available
     if (!orderAmount && orderInfo) {
       orderAmount = parseFloat(orderInfo.amount);
     }
-    
-    // Cashfree se actual amount fetch karein (agar order info nahi mila)
-    if (!orderInfo && order_id) {
-      console.log('⚠️ Order info not found in storage. Fetching from Cashfree...');
+
+    userId = userId || (orderInfo ? orderInfo.userId : null);
+
+    if (!orderId && !userId) {
+      console.log('❌ No order ID or user ID found');
+      return res.status(400).send(`
+        <html>
+        <body>
+          <h1>Error: Order ID and User ID not found</h1>
+          <p>Please contact support.</p>
+        </body>
+        </html>
+      `);
     }
 
-    try {
-      const response = await axios.get(
-        `${CASHFREE_BASE_URL}/pg/orders/${order_id}`,
-        {
-          headers: {
-            'x-client-id': CASHFREE_APP_ID,
-            'x-client-secret': CASHFREE_SECRET_KEY,
-            'x-api-version': '2023-08-01'
-          }
-        }
-      );
-
-      const orderDetails = response.data;
-      paymentVerified = orderDetails && orderDetails.order_status === 'PAID';
-      // Cashfree se actual amount fetch karein (webhook amount preferred)
-      const cashfreeAmount = orderDetails?.order_amount || orderDetails?.orderAmount;
-      if (cashfreeAmount && !orderAmount) {
-        orderAmount = parseFloat(cashfreeAmount);
-        console.log(`💰 Cashfree Amount (from API): ₹${orderAmount}`);
-      }
-      
-      // Agar order info nahi mila, to Cashfree data se create karein
-      if (!orderInfo && orderDetails && userId) {
-        console.log('📝 Creating order info from Cashfree data...');
-        orderInfo = {
-          userId: userId,
-          amount: orderAmount,
-          status: 'PENDING',
-          cashfreeOrderId: order_id
-        };
-        walletBalances[order_id] = orderInfo;
-      }
-    } catch (apiError) {
-      console.log('⚠️ Could not verify with API, using webhook data');
-      // If API call fails, rely on webhook data or query params
-      paymentVerified = order_status === 'PAID' || payment_status === 'SUCCESS';
-    }
-    
-    // IMPORTANT: Payment verified check - agar status nahi mila, to bhi proceed karein
-    // Cashfree form se redirect hoga, to payment success assume karein
-    // Agar ourOrderId mila hai, to payment success assume karein (kyunki Cashfree redirect karta hai success par hi)
-    const isPaymentSuccess = paymentVerified || 
-                              order_status === 'PAID' || 
-                              payment_status === 'SUCCESS' ||
-                              (ourOrderId && orderInfo); // Fallback: agar order mila, to success assume karein
+    const isPaymentSuccess = paymentVerified && orderAmount > 0;
     
     console.log('✅ Payment Success Check:', {
       paymentVerified,
-      order_status: order_status || 'NOT_PROVIDED',
-      payment_status: payment_status || 'NOT_PROVIDED',
-      ourOrderId: !!ourOrderId,
+      orderId: orderId || 'NOT_PROVIDED',
       orderInfo: !!orderInfo,
       isPaymentSuccess
     });
     
-    // IMPORTANT: Always redirect to app, even if payment not verified (kyunki Cashfree redirect karta hai success par hi)
-    // But balance update sirf verified payment par hi karein
-    if (isPaymentSuccess || ourOrderId) {
-      // Update wallet balance (only if not already updated by webhook)
+    // Update wallet balance (only if payment verified and not already updated by webhook)
+    if (isPaymentSuccess && userId) {
       // IMPORTANT: Check if transaction already exists (webhook might have already updated)
-      const existingTransaction = userId && walletBalances[userId] ? 
+      const existingTransaction = walletBalances[userId] ? 
         walletBalances[userId].transactions.find(
-          t => (t.orderId === order_id || t.orderId === ourOrderId || t.ourOrderId === ourOrderId) && t.status === 'SUCCESS'
+          t => (t.orderId === orderId || t.paymentId === razorpay_payment_id) && t.status === 'SUCCESS'
         ) : null;
       
-      if (!existingTransaction && userId) {
+      if (!existingTransaction) {
         // Initialize balance if user doesn't exist
         if (!walletBalances[userId]) {
           walletBalances[userId] = { balance: 0, transactions: [] };
@@ -321,8 +282,8 @@ app.get('/api/payment/success', async (req, res) => {
           // Update balance - actual payment amount use karein
           walletBalances[userId].balance += finalAmount;
           walletBalances[userId].transactions.push({
-            orderId: order_id || ourOrderId,
-            ourOrderId: ourOrderId,
+            orderId: orderId,
+            paymentId: razorpay_payment_id,
             amount: finalAmount,
             type: 'CREDIT',
             status: 'SUCCESS',
@@ -339,10 +300,10 @@ app.get('/api/payment/success', async (req, res) => {
         }
 
         // Mark order as completed
-        if (ourOrderId && walletBalances[ourOrderId]) {
-          walletBalances[ourOrderId].status = 'COMPLETED';
-          if (order_id) {
-            walletBalances[ourOrderId].cashfreeOrderId = order_id;
+        if (orderId && walletBalances[orderId]) {
+          walletBalances[orderId].status = 'COMPLETED';
+          if (razorpay_payment_id) {
+            walletBalances[orderId].razorpayPaymentId = razorpay_payment_id;
           }
         }
       } else if (existingTransaction) {
@@ -351,7 +312,6 @@ app.get('/api/payment/success', async (req, res) => {
         orderAmount = existingTransaction.amount;
       }
 
-      // IMPORTANT: Always redirect to app, even if payment not verified (kyunki Cashfree redirect karta hai success par hi)
       // Redirect to app with success message
       // App ka deep link - order info se ya query param se
       const appRedirectUrl = req.query.app_redirect || (orderInfo ? orderInfo.appRedirectUrl : null) || APP_DEEP_LINK;
@@ -359,11 +319,11 @@ app.get('/api/payment/success', async (req, res) => {
       console.log('🔗 App Redirect URL:', appRedirectUrl);
       
       // IMPORTANT FIX: Deep link URL properly format karein
-      // Webhook amount use karein (actual payment amount - ₹1)
       const actualAmount = orderAmount || 0;
       const currentBalance = walletBalances[userId]?.balance || 0;
       const deepLinkParams = new URLSearchParams({
-        order_id: order_id || ourOrderId || '',
+        order_id: orderId || '',
+        payment_id: razorpay_payment_id || '',
         status: 'success',
         amount: actualAmount.toString(),
         user_id: userId || '',
@@ -371,7 +331,8 @@ app.get('/api/payment/success', async (req, res) => {
       });
       
       console.log('🔗 Deep Link Params:', {
-        order_id: order_id || ourOrderId,
+        order_id: orderId,
+        payment_id: razorpay_payment_id,
         amount: actualAmount,
         user_id: userId,
         balance: currentBalance
@@ -513,7 +474,8 @@ app.get('/api/payment/success', async (req, res) => {
             <div style="font-size: 60px; margin-bottom: 20px;">✅</div>
             <h1 style="color: #28a745; margin: 0 0 10px 0; font-size: 24px;">Payment Successful!</h1>
             <p style="font-size: 32px; color: #333; margin: 15px 0; font-weight: bold;">₹${actualAmount}</p>
-            <p style="color: #666; margin: 5px 0; font-size: 14px;">Order ID: ${order_id || ourOrderId || 'N/A'}</p>
+            <p style="color: #666; margin: 5px 0; font-size: 14px;">Order ID: ${orderId || 'N/A'}</p>
+            <p style="color: #666; margin: 5px 0; font-size: 14px;">Payment ID: ${razorpay_payment_id || 'N/A'}</p>
             <p style="color: #666; margin: 5px 0; font-size: 14px;">Balance: ₹${currentBalance}</p>
             <p style="color: #666; margin: 20px 0 10px 0; font-size: 14px;">Opening app...</p>
             
@@ -623,7 +585,7 @@ app.get('/api/payment/success', async (req, res) => {
     } else {
       // Payment failed or pending
       const appRedirectUrl = req.query.app_redirect || (orderInfo ? orderInfo.appRedirectUrl : null) || 'equityapp://payment-failed';
-      const failedRedirectUrl = `${appRedirectUrl}?order_id=${order_id}&status=failed&user_id=${userId}`;
+      const failedRedirectUrl = `${appRedirectUrl}?order_id=${orderId || ''}&status=failed&user_id=${userId || ''}`;
       
       res.send(`
         <!DOCTYPE html>
@@ -637,7 +599,7 @@ app.get('/api/payment/success', async (req, res) => {
           <div style="background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 400px;">
             <div style="font-size: 60px; margin-bottom: 20px;">❌</div>
             <h1 style="color: #dc3545; margin: 0 0 10px 0;">Payment Failed</h1>
-            <p style="color: #666; margin: 5px 0; font-size: 14px;">Order ID: ${order_id}</p>
+            <p style="color: #666; margin: 5px 0; font-size: 14px;">Order ID: ${orderId || 'N/A'}</p>
             <p style="color: #666; margin: 20px 0 0 0; font-size: 14px;">Redirecting to app...</p>
             <a href="${failedRedirectUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 30px; background: #f5576c; color: white; text-decoration: none; border-radius: 25px; font-weight: bold;">Open App</a>
           </div>
@@ -664,148 +626,92 @@ app.get('/api/payment/success', async (req, res) => {
   }
 });
 
-// Payment Webhook - Cashfree will call this automatically
+// Payment Webhook - Razorpay will call this automatically
 app.post('/api/payment/webhook', async (req, res) => {
   try {
     const webhookData = req.body;
+    const webhookSignature = req.headers['x-razorpay-signature'];
+    
     console.log('\n📡 ===== WEBHOOK RECEIVED =====');
     console.log('📦 Webhook Data:', JSON.stringify(webhookData, null, 2));
+    console.log('🔐 Webhook Signature:', webhookSignature || 'NOT_PROVIDED');
 
-    // Cashfree webhook format - data structure se extract karein
-    // Format: { data: { order: { order_id, order_amount }, payment: { payment_status }, customer_details: { customer_id } } }
-    const cashfreeOrderId = webhookData.data?.order?.order_id || 
-                             webhookData.orderId || 
-                             webhookData.order_id;
-    const orderAmount = webhookData.data?.order?.order_amount || 
-                        webhookData.orderAmount || 
-                        webhookData.order_amount;
-    const orderStatus = webhookData.data?.order?.order_status || 
-                        webhookData.orderStatus || 
-                        webhookData.order_status;
-    const paymentStatus = webhookData.data?.payment?.payment_status || 
-                          webhookData.paymentStatus || 
-                          webhookData.payment_status;
-    const userId = webhookData.data?.customer_details?.customer_id || 
-                   webhookData.customerId || 
-                   webhookData.customer_id;
-    // Email aur phone bhi extract karein for matching
-    const customerEmail = webhookData.data?.customer_details?.customer_email || 
-                          webhookData.customerEmail;
-    const customerPhone = webhookData.data?.customer_details?.customer_phone || 
-                          webhookData.customerPhone;
+    // Verify webhook signature
+    if (RAZORPAY_WEBHOOK_SECRET && webhookSignature) {
+      const text = JSON.stringify(webhookData);
+      const generatedSignature = crypto
+        .createHmac('sha256', RAZORPAY_WEBHOOK_SECRET)
+        .update(text)
+        .digest('hex');
+
+      if (generatedSignature !== webhookSignature) {
+        console.log('❌ Webhook signature verification failed');
+        return res.status(400).json({ success: false, message: 'Invalid signature' });
+      }
+      console.log('✅ Webhook signature verified');
+    }
+
+    // Razorpay webhook format
+    // Format: { event: 'payment.captured', payload: { payment: { entity: { id, order_id, amount, status } } } }
+    const event = webhookData.event;
+    const paymentEntity = webhookData.payload?.payment?.entity;
+    
+    if (!paymentEntity) {
+      console.log('⚠️ No payment entity in webhook');
+      return res.status(200).json({ success: true, message: 'Webhook received but no payment data' });
+    }
+
+    const razorpayPaymentId = paymentEntity.id;
+    const razorpayOrderId = paymentEntity.order_id;
+    const paymentAmount = paymentEntity.amount; // Amount in paise
+    const paymentStatus = paymentEntity.status;
+    const paymentNotes = paymentEntity.notes || {};
 
     console.log('🔍 Extracted from webhook:');
-    console.log('  Order ID:', cashfreeOrderId);
-    console.log('  Amount:', orderAmount);
+    console.log('  Event:', event);
+    console.log('  Payment ID:', razorpayPaymentId);
+    console.log('  Order ID:', razorpayOrderId);
+    console.log('  Amount (paise):', paymentAmount);
     console.log('  Payment Status:', paymentStatus);
-    console.log('  Customer ID from webhook:', userId);
-    console.log('  Customer Email:', customerEmail);
-    console.log('  Customer Phone:', customerPhone);
+    console.log('  Notes:', paymentNotes);
 
-    // Verify webhook signature (recommended for production)
-    // const signature = req.headers['x-cashfree-signature'];
-    // Verify signature here for security
-
-    if ((orderStatus === 'PAID' || paymentStatus === 'SUCCESS') && cashfreeOrderId) {
-      // Cashfree ka order_id hamare generated order_id se different ho sakta hai
-      // Isliye stored orders mein search karein
-      let orderInfo = walletBalances[cashfreeOrderId];
-      let ourOrderId = cashfreeOrderId;
+    // Process payment.captured event
+    if (event === 'payment.captured' && paymentStatus === 'captured' && razorpayOrderId) {
+      const orderInfo = walletBalances[razorpayOrderId];
+      const userId = paymentNotes.userId || (orderInfo ? orderInfo.userId : null);
       
-      // IMPORTANT: Order matching - multiple strategies
-      // Strategy 1: Email/Phone se match karein (most reliable)
-      if (!orderInfo && (customerEmail || customerPhone)) {
-        console.log('🔍 Searching by email/phone...');
-        for (const [storedOrderId, storedOrder] of Object.entries(walletBalances)) {
-          if (storedOrder.userId && storedOrder.status === 'PENDING') {
-            const emailMatch = customerEmail && storedOrder.customerEmail && 
-                               storedOrder.customerEmail.toLowerCase() === customerEmail.toLowerCase();
-            const phoneMatch = customerPhone && storedOrder.customerPhone && 
-                              storedOrder.customerPhone.replace(/[^0-9]/g, '') === customerPhone.replace(/[^0-9]/g, '');
-            
-            if (emailMatch || phoneMatch) {
-              orderInfo = storedOrder;
-              ourOrderId = storedOrderId;
-              console.log(`✅ Found order by email/phone: ${storedOrderId} (Cashfree: ${cashfreeOrderId})`);
-              console.log(`   Email match: ${emailMatch}, Phone match: ${phoneMatch}`);
-              break;
-            }
-          }
-        }
-      }
-      
-      // Strategy 2: userId se search (agar available ho)
-      if (!orderInfo && userId) {
-        console.log('🔍 Searching by userId...');
-        for (const [storedOrderId, storedOrder] of Object.entries(walletBalances)) {
-          if (storedOrder.userId === userId && 
-              storedOrder.status === 'PENDING') {
-            orderInfo = storedOrder;
-            ourOrderId = storedOrderId;
-            console.log(`✅ Found order by userId: ${storedOrderId}`);
-            break;
-          }
-        }
-      }
-      
-      // Strategy 3: PENDING orders se latest order find karein (last resort)
-      if (!orderInfo) {
-        console.log('🔍 Searching for latest PENDING order...');
-        let latestOrder = null;
-        let latestOrderId = null;
-        let latestTime = 0;
-        
-        for (const [storedOrderId, storedOrder] of Object.entries(walletBalances)) {
-          if (storedOrder.userId && storedOrder.status === 'PENDING' && storedOrder.createdAt) {
-            const orderTime = new Date(storedOrder.createdAt).getTime();
-            if (orderTime > latestTime) {
-              latestTime = orderTime;
-              latestOrder = storedOrder;
-              latestOrderId = storedOrderId;
-            }
-          }
-        }
-        
-        if (latestOrder) {
-          orderInfo = latestOrder;
-          ourOrderId = latestOrderId;
-          console.log(`⚠️ Found latest PENDING order: ${latestOrderId} (using this as fallback)`);
-        }
-      }
-      
-      const finalUserId = userId || (orderInfo ? orderInfo.userId : null);
-      // IMPORTANT: Webhook amount use karein (actual payment amount)
-      const amount = parseFloat(orderAmount || 0);
+      // IMPORTANT: Webhook amount use karein (actual payment amount in paise)
+      const amount = parseFloat(paymentAmount) / 100; // Convert from paise to rupees
       
       console.log('💰 Amount to credit:', amount);
-      console.log('   Webhook amount:', orderAmount);
+      console.log('   Webhook amount (paise):', paymentAmount);
       console.log('   Stored order amount:', orderInfo?.amount);
       console.log('   Using webhook amount for balance update');
 
-      if (finalUserId && amount > 0) {
+      if (userId && amount > 0) {
         // Only update if not already completed
         if (!orderInfo || orderInfo.status !== 'COMPLETED') {
           // Initialize balance if user doesn't exist
-          if (!walletBalances[finalUserId]) {
-            walletBalances[finalUserId] = { balance: 0, transactions: [] };
+          if (!walletBalances[userId]) {
+            walletBalances[userId] = { balance: 0, transactions: [] };
           }
 
-          // Check if this transaction already exists (by Cashfree order ID or our order ID)
-          const existingTransaction = walletBalances[finalUserId].transactions.find(
-            t => (t.orderId === cashfreeOrderId || t.orderId === ourOrderId) && t.status === 'SUCCESS'
+          // Check if this transaction already exists
+          const existingTransaction = walletBalances[userId].transactions.find(
+            t => (t.orderId === razorpayOrderId || t.paymentId === razorpayPaymentId) && t.status === 'SUCCESS'
           );
 
           if (!existingTransaction) {
             // IMPORTANT: Ensure balance is a number
-            if (typeof walletBalances[finalUserId].balance !== 'number') {
-              walletBalances[finalUserId].balance = 0;
+            if (typeof walletBalances[userId].balance !== 'number') {
+              walletBalances[userId].balance = 0;
             }
             
             // Update balance
-            walletBalances[finalUserId].balance = (walletBalances[finalUserId].balance || 0) + amount;
-            walletBalances[finalUserId].transactions.push({
-              orderId: cashfreeOrderId, // Store Cashfree order ID
-              ourOrderId: ourOrderId, // Store our generated order ID
+            walletBalances[userId].balance = (walletBalances[userId].balance || 0) + amount;
+            walletBalances[userId].transactions.push({
+              orderId: razorpayOrderId,
+              paymentId: razorpayPaymentId,
               amount: amount,
               type: 'CREDIT',
               status: 'SUCCESS',
@@ -813,42 +719,32 @@ app.post('/api/payment/webhook', async (req, res) => {
               source: 'webhook'
             });
 
-            console.log(`✅ Balance updated for user ${finalUserId}: +₹${amount}`);
-            console.log(`📝 Cashfree Order ID: ${cashfreeOrderId}`);
-            console.log(`📝 Our Order ID: ${ourOrderId}`);
-            console.log('💰 New Balance:', walletBalances[finalUserId].balance);
-            console.log('📊 Balance type:', typeof walletBalances[finalUserId].balance);
-            console.log('📦 Full wallet data:', JSON.stringify(walletBalances[finalUserId], null, 2));
+            console.log(`✅ Balance updated for user ${userId}: +₹${amount}`);
+            console.log(`📝 Razorpay Order ID: ${razorpayOrderId}`);
+            console.log(`📝 Razorpay Payment ID: ${razorpayPaymentId}`);
+            console.log('💰 New Balance:', walletBalances[userId].balance);
+            console.log('📊 Balance type:', typeof walletBalances[userId].balance);
+            console.log('📦 Full wallet data:', JSON.stringify(walletBalances[userId], null, 2));
             
             // IMPORTANT: Save balance to Firestore via Flutter app API call
             // Note: Flutter app will sync this to Firestore when it calls the balance API
             // For now, balance is stored in memory and will be synced
             console.log('💾 Balance stored in backend. Flutter app will sync to Firestore.');
             console.log('=====================================\n');
-            
-            // IMPORTANT: Call Flutter app's Firestore update endpoint (if available)
-            // Or Flutter app will sync when it calls /api/wallet/balance/:userId
           } else {
             console.log('⚠️ Transaction already processed, skipping...');
-            console.log('💰 Current Balance:', walletBalances[finalUserId].balance);
+            console.log('💰 Current Balance:', walletBalances[userId].balance);
           }
 
-          // Mark order as completed (both Cashfree ID and our ID)
+          // Mark order as completed
           if (orderInfo) {
-            walletBalances[ourOrderId].status = 'COMPLETED';
-            walletBalances[ourOrderId].cashfreeOrderId = cashfreeOrderId; // Store mapping
-          }
-          // Also store Cashfree order ID mapping
-          if (cashfreeOrderId !== ourOrderId) {
-            walletBalances[cashfreeOrderId] = {
-              ...orderInfo,
-              status: 'COMPLETED',
-              cashfreeOrderId: cashfreeOrderId,
-              ourOrderId: ourOrderId
-            };
+            walletBalances[razorpayOrderId].status = 'COMPLETED';
+            walletBalances[razorpayOrderId].razorpayPaymentId = razorpayPaymentId;
           }
         }
       }
+    } else {
+      console.log(`⚠️ Event ${event} with status ${paymentStatus} - not processing`);
     }
 
     res.status(200).json({ success: true, message: 'Webhook processed successfully' });
@@ -914,67 +810,65 @@ app.post('/api/payment/check-status', async (req, res) => {
       });
     }
     
-    // Try to verify with Cashfree API
+    // Try to verify with Razorpay API
     try {
-      const response = await axios.get(
-        `${CASHFREE_BASE_URL}/pg/orders/${latestOrderId}`,
-        {
-          headers: {
-            'x-client-id': CASHFREE_APP_ID,
-            'x-client-secret': CASHFREE_SECRET_KEY,
-            'x-api-version': '2023-08-01'
-          }
-        }
-      );
+      const orderDetails = await razorpay.orders.fetch(latestOrderId);
       
-      const orderDetails = response.data;
-      if (orderDetails && orderDetails.order_status === 'PAID') {
-        // Payment successful - update balance
-        const amount = parseFloat(orderDetails.order_amount || latestOrder.amount);
+      if (orderDetails && orderDetails.status === 'paid') {
+        // Get payment details
+        const payments = await razorpay.orders.fetchPayments(latestOrderId);
+        const successfulPayment = payments.items.find(p => p.status === 'captured');
         
-        if (!walletBalances[userId]) {
-          walletBalances[userId] = { balance: 0, transactions: [] };
-        }
-        
-        // Check if already processed
-        const existingTransaction = walletBalances[userId].transactions.find(
-          t => t.orderId === latestOrderId && t.status === 'SUCCESS'
-        );
-        
-        if (!existingTransaction) {
-          walletBalances[userId].balance += amount;
-          walletBalances[userId].transactions.push({
+        if (successfulPayment) {
+          // Payment successful - update balance
+          const amount = parseFloat(successfulPayment.amount) / 100; // Convert from paise to rupees
+          
+          if (!walletBalances[userId]) {
+            walletBalances[userId] = { balance: 0, transactions: [] };
+          }
+          
+          // Check if already processed
+          const existingTransaction = walletBalances[userId].transactions.find(
+            t => (t.orderId === latestOrderId || t.paymentId === successfulPayment.id) && t.status === 'SUCCESS'
+          );
+          
+          if (!existingTransaction) {
+            walletBalances[userId].balance += amount;
+            walletBalances[userId].transactions.push({
+              orderId: latestOrderId,
+              paymentId: successfulPayment.id,
+              amount: amount,
+              type: 'CREDIT',
+              status: 'SUCCESS',
+              timestamp: new Date(),
+              source: 'manual_check'
+            });
+            
+            latestOrder.status = 'COMPLETED';
+            
+            console.log(`✅ Balance updated via manual check: +₹${amount}`);
+            console.log(`💰 New Balance: ${walletBalances[userId].balance}`);
+          }
+          
+          return res.json({
+            success: true,
+            message: 'Payment verified and balance updated',
             orderId: latestOrderId,
+            paymentId: successfulPayment.id,
             amount: amount,
-            type: 'CREDIT',
-            status: 'SUCCESS',
-            timestamp: new Date(),
-            source: 'manual_check'
+            balance: walletBalances[userId].balance
           });
-          
-          latestOrder.status = 'COMPLETED';
-          
-          console.log(`✅ Balance updated via manual check: +₹${amount}`);
-          console.log(`💰 New Balance: ${walletBalances[userId].balance}`);
         }
-        
-        return res.json({
-          success: true,
-          message: 'Payment verified and balance updated',
-          orderId: latestOrderId,
-          amount: amount,
-          balance: walletBalances[userId].balance
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: 'Payment not completed yet',
-          orderStatus: orderDetails?.order_status || 'UNKNOWN',
-          balance: walletBalances[userId]?.balance || 0
-        });
       }
+      
+      return res.json({
+        success: false,
+        message: 'Payment not completed yet',
+        orderStatus: orderDetails?.status || 'UNKNOWN',
+        balance: walletBalances[userId]?.balance || 0
+      });
     } catch (apiError) {
-      console.log('⚠️ Could not verify with Cashfree API:', apiError.message);
+      console.log('⚠️ Could not verify with Razorpay API:', apiError.message);
       return res.json({
         success: false,
         message: 'Could not verify payment status',
@@ -1107,10 +1001,10 @@ app.listen(PORT, () => {
   console.log('\n📋 API Endpoints:');
   console.log(`   POST   /api/payment/create-order - Create payment order`);
   console.log(`   GET    /api/payment/success - Payment success callback`);
-  console.log(`   POST   /api/payment/webhook - Cashfree webhook`);
+  console.log(`   POST   /api/payment/webhook - Razorpay webhook`);
   console.log(`   GET    /api/wallet/balance/:userId - Get wallet balance`);
   console.log(`   GET    /api/wallet/transactions/:userId - Get transactions`);
-  console.log('\n📋 Cashfree Dashboard URLs:');
+  console.log('\n📋 Razorpay Dashboard URLs:');
   console.log(`   Return URL: ${publicUrl}/api/payment/success`);
   console.log(`   Webhook URL: ${publicUrl}/api/payment/webhook`);
   console.log('\n👀 Waiting for payment requests...');

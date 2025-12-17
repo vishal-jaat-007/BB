@@ -1,0 +1,84 @@
+📱 FLUTTER APP DEVELOPER - RAZORPAY INTEGRATION PROMPT
+=======================================================
+
+Backend Razorpay integration ready hai. Ab Flutter app mein integrate karna hai.
+
+REQUIREMENTS:
+1. Razorpay Flutter package install karo (razorpay_flutter: ^1.3.0)
+2. Backend API se payment order create karo
+3. Razorpay Checkout open karo
+4. Payment success/failure handle karo
+5. Wallet balance refresh karo
+
+BACKEND API ENDPOINTS:
+- Base URL: https://your-backend-url.com (update karo)
+- Create Order: POST /api/payment/create-order
+- Get Balance: GET /api/wallet/balance/:userId
+
+BACKEND API REQUEST (Create Order):
+{
+  "userId": "user123",
+  "amount": "1000",
+  "currency": "INR",
+  "customerName": "User Name",
+  "customerEmail": "user@example.com",
+  "customerPhone": "9999999999",
+  "appRedirectUrl": "equityapp://payment-success"
+}
+
+BACKEND API RESPONSE:
+{
+  "success": true,
+  "orderId": "order_xxxxx",
+  "keyId": "rzp_live_RsiXvkO1ULNiTn",
+  "amount": 100000,  // Amount in paise (1000 * 100)
+  "currency": "INR",
+  "name": "Wallet Recharge",
+  "description": "Wallet Recharge",
+  "prefill": {...},
+  "notes": {...},
+  "returnUrl": "..."
+}
+
+RAZORPAY CONFIGURATION:
+- Live Key ID: rzp_live_RsiXvkO1ULNiTn
+- (Backend se automatically aayega, lekin fallback ke liye use karo)
+
+IMPLEMENTATION STEPS:
+1. PaymentService class banao
+2. Razorpay initialize karo with event handlers
+3. Backend se order create karo (POST /api/payment/create-order)
+4. Response se orderId, keyId, amount lein
+5. Razorpay.open() call karo with options
+6. Payment success handler mein balance refresh karo
+7. Payment error handler mein error dikhao
+
+CODE STRUCTURE:
+- PaymentService class with initiatePayment() method
+- Payment success handler (_handlePaymentSuccess)
+- Payment error handler (_handlePaymentError)
+- Wallet balance getter method (getWalletBalance)
+- Deep link handler for payment-success
+
+DEEP LINK:
+- Scheme: equityapp://payment-success
+- Android: AndroidManifest.xml mein intent-filter add karo
+- iOS: Info.plist mein CFBundleURLTypes add karo
+
+IMPORTANT:
+- Backend URL update karo
+- Error handling add karo
+- Loading states dikhao
+- Payment success ke baad balance refresh karo
+- Deep link properly handle karo
+
+TESTING:
+- Test Mode mein pehle test karo
+- Razorpay test cards use karo
+- Success aur error flows dono test karo
+
+DETAILED GUIDE:
+FLUTTER_DEVELOPER_GUIDE.md file mein complete code examples hain.
+
+QUICK REFERENCE:
+FLUTTER_QUICK_START.txt file dekho.
