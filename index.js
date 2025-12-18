@@ -83,13 +83,25 @@ app.post('/api/payment/create-order', async (req, res) => {
       });
     }
 
+    // Validate minimum amount (₹1 = 100 paise)
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue < 1) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Minimum amount is ₹1. Please enter amount greater than or equal to ₹1.' 
+      });
+    }
+
     // Build return URL
     const baseUrl = req.protocol + '://' + req.get('host');
     const returnUrl = `${baseUrl}/api/payment/success?user_id=${encodeURIComponent(userId)}&app_redirect=${encodeURIComponent(appRedirectUrl || APP_DEEP_LINK)}`;
     
+    // Ensure minimum amount is ₹1 (100 paise)
+    const finalAmount = Math.max(amountValue, 1); // Minimum ₹1
+    
     // Create Razorpay order
     const options = {
-      amount: parseFloat(amount) * 100, // Razorpay expects amount in paise
+      amount: Math.round(finalAmount * 100), // Razorpay expects amount in paise, minimum 100 paise (₹1)
       currency: currency,
       receipt: `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       notes: {
@@ -117,7 +129,7 @@ app.post('/api/payment/create-order', async (req, res) => {
     // Store order details temporarily (in production, save to database)
     walletBalances[orderId] = {
       userId,
-      amount: parseFloat(amount),
+      amount: finalAmount, // Use validated amount (minimum ₹1)
       status: 'PENDING',
       createdAt: new Date(),
       appRedirectUrl: appRedirectUrl || APP_DEEP_LINK,
@@ -129,7 +141,7 @@ app.post('/api/payment/create-order', async (req, res) => {
     console.log('💾 Order stored:', {
       orderId: orderId,
       userId: userId,
-      amount: parseFloat(amount),
+      amount: finalAmount,
       status: 'PENDING'
     });
 
