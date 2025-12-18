@@ -152,7 +152,7 @@ app.post('/api/payment/create-order', async (req, res) => {
       success: true,
       orderId: orderId,
       keyId: RAZORPAY_KEY_ID,
-      amount: parseFloat(amount) * 100, // Amount in paise
+      amount: Math.round(finalAmount * 100), // Amount in paise (minimum 100 paise = ₹1)
       currency: currency,
       name: customerName || 'User',
       description: 'Wallet Recharge',

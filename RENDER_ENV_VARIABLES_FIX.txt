@@ -1,0 +1,85 @@
+🔧 RENDER ENVIRONMENT VARIABLES - FIX
+======================================
+
+❌ PROBLEM:
+-----------
+Render pe abhi bhi Cashfree variables hain, Razorpay variables nahi hain.
+Isliye 500 error aa raha hai.
+
+✅ SOLUTION:
+------------
+
+STEP 1: DELETE OLD CASHFREE VARIABLES
+--------------------------------------
+Render Dashboard → Environment Variables section mein:
+
+❌ CASHFREE_APP_ID - DELETE (trash icon click karo)
+❌ CASHFREE_FORM_URL - DELETE
+❌ CASHFREE_SECRET_KEY - DELETE
+
+STEP 2: ADD RAZORPAY VARIABLES
+-------------------------------
+"+ Add" button click karo aur ye 3 variables add karo:
+
+Variable 1:
+  Key: RAZORPAY_KEY_ID
+  Value: rzp_live_RsiXvkO1ULNiTn
+  Secret: No (eye icon off rakho)
+
+Variable 2:
+  Key: RAZORPAY_KEY_SECRET
+  Value: Upl6w0gzUCxF4f6PJVw1So7D
+  Secret: ✅ YES (eye icon ON karo - click karo taaki masked ho)
+
+Variable 3:
+  Key: RAZORPAY_WEBHOOK_SECRET
+  Value: d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+  Secret: ✅ YES (eye icon ON karo - click karo taaki masked ho)
+
+STEP 3: KEEP EXISTING VARIABLES
+--------------------------------
+✅ NODE_ENV - Keep (value: production)
+✅ PORT - Keep (value: 10000 ya jo bhi hai)
+
+STEP 4: SAVE & DEPLOY
+---------------------
+1. "Save, rebuild, and deploy" button click karo
+2. Wait for deployment (2-3 minutes)
+3. Service "Live" status dikhne tak wait karo
+
+✅ FINAL VARIABLES LIST:
+-----------------------
+After fix, ye variables hongi:
+
+✅ RAZORPAY_KEY_ID = rzp_live_RsiXvkO1ULNiTn
+✅ RAZORPAY_KEY_SECRET = Upl6w0gzUCxF4f6PJVw1So7D (Secret)
+✅ RAZORPAY_WEBHOOK_SECRET = d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7 (Secret)
+✅ NODE_ENV = production
+✅ PORT = 10000
+
+❌ REMOVED:
+----------
+❌ CASHFREE_APP_ID
+❌ CASHFREE_FORM_URL
+❌ CASHFREE_SECRET_KEY
+
+🎯 AFTER FIX:
+-------------
+1. Service restart ho jayega automatically
+2. Razorpay integration work karega
+3. 500 error fix ho jayega
+4. Payment orders create ho jayenge
+
+📝 IMPORTANT NOTES:
+-------------------
+✅ RAZORPAY_KEY_SECRET ko Secret mark karo (security ke liye)
+✅ RAZORPAY_WEBHOOK_SECRET ko Secret mark karo
+✅ Save ke baad automatically rebuild & deploy hoga
+✅ Deployment complete hone ke baad test karo
+
+🚀 QUICK COPY-PASTE VALUES:
+---------------------------
+RAZORPAY_KEY_ID=rzp_live_RsiXvkO1ULNiTn
+RAZORPAY_KEY_SECRET=Upl6w0gzUCxF4f6PJVw1So7D
+RAZORPAY_WEBHOOK_SECRET=d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+

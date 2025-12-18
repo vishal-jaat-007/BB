@@ -1,0 +1,82 @@
+🚀 RENDER PAR DEPLOY KARO - QUICK STEPS
+========================================
+
+📍 STEP 1: RENDER DASHBOARD
+----------------------------
+1. https://dashboard.render.com pe jao
+2. Login karo (ya sign up)
+3. "New +" button click karo
+4. "Web Service" select karo
+
+📍 STEP 2: GITHUB CONNECT
+--------------------------
+1. "Connect account" se GitHub connect karo
+2. Repository select karo: vishal-jaat-007/BB
+3. "Connect" click karo
+
+📍 STEP 3: CONFIGURATION
+-------------------------
+Name: razorpay-wallet-backend
+Environment: Node
+Branch: main
+Build Command: npm install
+Start Command: npm start
+Plan: Free (ya Paid)
+
+📍 STEP 4: ENVIRONMENT VARIABLES (COPY-PASTE)
+----------------------------------------------
+Render dashboard mein "Environment" section mein ye add karo:
+
+Key: RAZORPAY_KEY_ID
+Value: rzp_live_RsiXvkO1ULNiTn
+Secret: No
+
+Key: RAZORPAY_KEY_SECRET
+Value: Upl6w0gzUCxF4f6PJVw1So7D
+Secret: ✅ YES (eye icon click karo)
+
+Key: RAZORPAY_WEBHOOK_SECRET
+Value: d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+Secret: ✅ YES (eye icon click karo)
+
+Key: PORT
+Value: 10000
+Secret: No
+
+Key: NODE_ENV
+Value: production
+Secret: No
+
+📍 STEP 5: DEPLOY
+-----------------
+1. "Create Web Service" click karo
+2. 2-3 minutes wait karo
+3. "Live" status dikhne tak wait karo
+4. URL mil jayega: https://razorpay-wallet-backend.onrender.com
+
+📍 STEP 6: RAZORPAY WEBHOOK
+-----------------------------
+1. Razorpay Dashboard → Developers → Webhooks
+2. "Add New Webhook" click karo
+3. Webhook URL: https://YOUR_RENDER_URL.onrender.com/api/payment/webhook
+4. Secret: d29add2425aa4fc37e0ed3691324882e06f91060c74cc231f476ac9fb5a8a8c7
+5. Event: payment.captured select karo
+6. "Create Webhook" click karo
+
+✅ DONE!
+--------
+Server live hai! 🎉
+
+📝 NOTES:
+---------
+✅ render.yaml file already ready hai
+✅ Code GitHub pe push ho gaya hai
+✅ Environment variables manually add karni hongi
+✅ Webhook manually setup karna hoga
+
+🔗 LINKS:
+---------
+Render Dashboard: https://dashboard.render.com
+Razorpay Dashboard: https://dashboard.razorpay.com
+GitHub Repo: https://github.com/vishal-jaat-007/BB
+
