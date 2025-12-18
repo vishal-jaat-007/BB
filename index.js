@@ -13,11 +13,26 @@ const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'YOUR_KEY_ID';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YOUR_KEY_SECRET';
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'YOUR_WEBHOOK_SECRET';
 
+// Validate Razorpay credentials
+if (!RAZORPAY_KEY_ID || RAZORPAY_KEY_ID === 'YOUR_KEY_ID') {
+  console.error('❌ ERROR: RAZORPAY_KEY_ID not set! Please set environment variable.');
+}
+if (!RAZORPAY_KEY_SECRET || RAZORPAY_KEY_SECRET === 'YOUR_KEY_SECRET') {
+  console.error('❌ ERROR: RAZORPAY_KEY_SECRET not set! Please set environment variable.');
+}
+
 // Initialize Razorpay instance
-const razorpay = new Razorpay({
-  key_id: RAZORPAY_KEY_ID,
-  key_secret: RAZORPAY_KEY_SECRET
-});
+let razorpay;
+try {
+  razorpay = new Razorpay({
+    key_id: RAZORPAY_KEY_ID,
+    key_secret: RAZORPAY_KEY_SECRET
+  });
+  console.log('✅ Razorpay initialized with Key ID:', RAZORPAY_KEY_ID.substring(0, 10) + '...');
+} catch (error) {
+  console.error('❌ Razorpay initialization error:', error);
+  throw error;
+}
 
 // App Package Name - Flutter app ka package name
 const APP_PACKAGE_NAME = 'com.example.equityapp';
@@ -87,6 +102,12 @@ app.post('/api/payment/create-order', async (req, res) => {
     };
 
     console.log('📋 Creating Razorpay order with options:', options);
+    console.log('🔑 Using Razorpay Key ID:', RAZORPAY_KEY_ID ? RAZORPAY_KEY_ID.substring(0, 10) + '...' : 'NOT SET');
+
+    // Validate Razorpay instance
+    if (!razorpay) {
+      throw new Error('Razorpay instance not initialized. Check RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.');
+    }
 
     const razorpayOrder = await razorpay.orders.create(options);
     const orderId = razorpayOrder.id;
@@ -141,11 +162,37 @@ app.post('/api/payment/create-order', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error creating payment order:', error.message);
+    console.error('\n❌ ===== PAYMENT ORDER ERROR =====');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', JSON.stringify(error, null, 2));
+    
+    // Check if Razorpay credentials are set
+    if (!RAZORPAY_KEY_ID || RAZORPAY_KEY_ID === 'YOUR_KEY_ID') {
+      console.error('⚠️ RAZORPAY_KEY_ID is not set!');
+    }
+    if (!RAZORPAY_KEY_SECRET || RAZORPAY_KEY_SECRET === 'YOUR_KEY_SECRET') {
+      console.error('⚠️ RAZORPAY_KEY_SECRET is not set!');
+    }
+    
+    // Check if it's a Razorpay API error
+    if (error.error) {
+      console.error('Razorpay API Error:', error.error);
+      console.error('Razorpay Error Description:', error.error.description);
+      console.error('Razorpay Error Code:', error.error.code);
+    }
+    
+    console.error('=====================================\n');
+    
     res.status(500).json({
       success: false,
       message: 'Failed to create payment order',
-      error: error.message
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      razorpayError: error.error ? {
+        description: error.error.description,
+        code: error.error.code
+      } : undefined
     });
   }
 });
